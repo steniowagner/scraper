@@ -1,7 +1,7 @@
 module.exports = {
   up: (queryInterface, { INTEGER, STRING }) => {
     return queryInterface.createTable(
-      'iptus',
+      'iptu',
       {
         sampleid: {
           autoIncrement: true,
@@ -23,7 +23,7 @@ module.exports = {
       },
       {
         freezeTableName: true,
-        tableName: 'iptus',
+        tableName: 'iptu',
       }
     );
   },
