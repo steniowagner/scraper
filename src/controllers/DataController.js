@@ -1,12 +1,9 @@
-const { Op } = require('sequelize');
+const { QueryTypes } = require('sequelize');
+
 const { iptu } = require('../models');
+const db = require('../models');
 
 const PAGE_SIZE = 50;
-
-const paginate = page => ({
-  offset: page * PAGE_SIZE,
-  limit: PAGE_SIZE,
-});
 
 exports.load = async items => {
   try {
@@ -18,14 +15,11 @@ exports.load = async items => {
 
 exports.edit = async iptuUpdated => {
   try {
-    return await iptu.update(
+    return await db.sequelize.query(
+      `UPDATE iptu SET zona = '${iptuUpdated.zona}' WHERE sampleid = ${iptuUpdated.sampleid}`,
       {
-        ...iptuUpdated,
-      },
-      {
-        where: {
-          sampleid: iptuUpdated.sampleid,
-        },
+        type: QueryTypes.UPDATE,
+        raw: true,
       }
     );
   } catch (err) {
@@ -35,23 +29,28 @@ exports.edit = async iptuUpdated => {
 
 exports.read = async currentPage => {
   try {
-    return await iptu.findAll({
-      raw: true,
-      ...paginate(currentPage),
-      where: {
-        zona: {
-          [Op.eq]: null,
-        },
-      },
-    });
+    const offset = currentPage * PAGE_SIZE;
+    const limit = PAGE_SIZE;
+
+    return await db.sequelize.query(
+      `SELECT * FROM iptu WHERE zona IS null LIMIT ${limit} OFFSET ${offset}`,
+      {
+        type: QueryTypes.SELECT,
+        raw: true,
+      }
+    );
   } catch (err) {
+    console.log('errr, ', err);
     return [];
   }
 };
 
 exports.readAll = async () => {
   try {
-    return await iptu.findAll({ raw: true });
+    return await db.sequelize.query('SELECT * FROM iptu', {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
   } catch (err) {
     console.log(err);
   }
