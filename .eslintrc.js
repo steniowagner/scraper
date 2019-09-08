@@ -20,6 +20,7 @@ module.exports = {
     "prettier/prettier": "error",
     "no-params-reassign": "off",
     "camelcase": "off",
+    "consistent-return": "off",
     "no-console": "off",
   },
 };

@@ -4,6 +4,9 @@ const cheerio = require('cheerio');
 const BASE_URL =
   'http://geosampa.prefeitura.sp.gov.br/PaginasPublicas/Report/ConsultaZoneamento/ConsultaZoneamento.aspx?SQLzoneamento';
 
+const DEFAULT_ERRROR_MESSAGE =
+  'Object reference not set to an instance of an object.';
+
 const getScrapedHTMLData = async url => {
   try {
     const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
@@ -24,6 +27,13 @@ const getScrapedHTMLData = async url => {
 
 const parseData = pageBody => {
   let $ = cheerio.load(pageBody);
+
+  const labelMessage = $('#lblMensagem').text();
+
+  if (labelMessage === DEFAULT_ERRROR_MESSAGE) {
+    throw new Error('Invalid Input');
+  }
+
   const data = [];
 
   const mainTableContent = $(
@@ -80,14 +90,10 @@ const parseData = pageBody => {
 };
 
 const startScraping = async url => {
-  try {
-    const html = await getScrapedHTMLData(url);
-    const data = parseData(html);
+  const html = await getScrapedHTMLData(url);
+  const data = parseData(html);
 
-    return data;
-  } catch (err) {
-    console.log(err);
-  }
+  return data;
 };
 
 const getRequestParams = iptu => {
@@ -100,12 +106,16 @@ const getRequestParams = iptu => {
   return [sector, block, lot];
 };
 
-exports.startScraping = async data => {
-  const { numero_contribuinte } = data;
-  const [sector, block, lot] = getRequestParams(numero_contribuinte);
-  const url = `${BASE_URL}=${sector}-${block}-${lot}`;
+exports.startScraping = async numero_contribuinte => {
+  try {
+    const [sector, block, lot] = getRequestParams(numero_contribuinte);
+    const url = `${BASE_URL}=${sector}-${block}-${lot}`;
 
-  const zoneData = await startScraping(url);
+    const zoneData = await startScraping(url);
 
-  return zoneData[0].sigla;
+    return zoneData[0].sigla;
+  } catch (err) {
+    console.log('122', err.message);
+    throw err;
+  }
 };
