@@ -1,6 +1,8 @@
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
 
+const defaultZones = require('../data/zones');
+
 const BASE_URL =
   'http://geosampa.prefeitura.sp.gov.br/PaginasPublicas/Report/ConsultaZoneamento/ConsultaZoneamento.aspx?SQLzoneamento';
 
@@ -25,7 +27,43 @@ const getScrapedHTMLData = async url => {
   }
 };
 
-const parseData = pageBody => {
+const getZoneValue = content => {
+  const parsedContent = content
+    .trim()
+    .split(' ')
+    .join('-');
+
+  const isCorrectItemFromTable = defaultZones.some(
+    zone => zone === parsedContent
+  );
+
+  return isCorrectItemFromTable ? parsedContent : null;
+};
+
+const getZoneData = targetContent => {
+  const $ = cheerio.load(targetContent);
+
+  let content;
+  let i = 3;
+  let zone;
+
+  while (!zone && i < 6) {
+    content = $(targetContent)
+      .children('tr')
+      .eq(i)
+      .children('td')
+      .eq(1)
+      .text();
+
+    zone = getZoneValue(content);
+
+    i += 1;
+  }
+
+  return zone;
+};
+
+const getTargetContent = pageBody => {
   let $ = cheerio.load(pageBody);
 
   const labelMessage = $('#lblMensagem').text();
@@ -33,8 +71,6 @@ const parseData = pageBody => {
   if (labelMessage === DEFAULT_ERRROR_MESSAGE) {
     throw new Error('Invalid Input');
   }
-
-  const data = [];
 
   const mainTableContent = $(
     '#VisibleReportContentrpvRelatorio_ctl09 div table tbody tr td table tbody'
@@ -45,55 +81,18 @@ const parseData = pageBody => {
 
   $ = cheerio.load(mainTableContent);
 
-  const getZoneData = targetContent => {
-    let rowData = {};
-
-    for (let i = 3; i < 6; i++) {
-      const outterContent = $(targetContent)
-        .children('tr')
-        .eq(i);
-
-      for (let j = 1; j < 5; j++) {
-        const innerContent = $(outterContent)
-          .children('td')
-          .eq(j)
-          .text();
-
-        if (j === 1) {
-          rowData.sigla = innerContent;
-        }
-
-        if (j === 2) {
-          rowData.descricao = innerContent;
-        }
-
-        if (j === 3) {
-          rowData.perimetro = innerContent;
-        }
-
-        if (j === 4) {
-          rowData.legislacao = innerContent;
-        }
-      }
-
-      data.push(rowData);
-
-      rowData = {};
-    }
-  };
-
   const targetContent = $('td table tbody tr td table tbody');
 
-  getZoneData(targetContent);
-
-  return data;
+  return targetContent;
 };
 
-const startScraping = async url => {
+const runScraper = async url => {
   const html = await getScrapedHTMLData(url);
-  const data = parseData(html);
+  const targetContent = getTargetContent(html);
 
-  return data;
+  const zone = getZoneData(targetContent);
+
+  return zone;
 };
 
 const getRequestParams = iptu => {
@@ -107,15 +106,10 @@ const getRequestParams = iptu => {
 };
 
 exports.startScraping = async numero_contribuinte => {
-  try {
-    const [sector, block, lot] = getRequestParams(numero_contribuinte);
-    const url = `${BASE_URL}=${sector}-${block}-${lot}`;
+  const [sector, block, lot] = getRequestParams(numero_contribuinte);
+  const url = `${BASE_URL}=${sector}-${block}-${lot}`;
 
-    const zoneData = await startScraping(url);
+  const zone = await runScraper(url);
 
-    return zoneData[0].sigla;
-  } catch (err) {
-    console.log('122', err.message);
-    throw err;
-  }
+  return zone;
 };
