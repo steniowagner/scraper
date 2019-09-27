@@ -33,15 +33,14 @@ exports.read = async currentPage => {
     const limit = PAGE_SIZE;
 
     return await db.sequelize.query(
-      `SELECT * FROM iptu WHERE zona IN ('PA', 'MA', '99', 'PI') OR zona IS null ORDER BY zona ASC LIMIT ${limit} OFFSET ${offset}`,
+      `SELECT * FROM iptu WHERE zona IS null LIMIT ${limit} OFFSET ${offset}`,
       {
         type: QueryTypes.SELECT,
         raw: true,
       }
     );
   } catch (err) {
-    console.log('errr, ', err);
-    return [];
+    throw err;
   }
 };
 

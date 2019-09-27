@@ -56,32 +56,36 @@ function* startTasks(iptus) {
 
 const runner = async generatorRunner => {
   const run = async () => {
-    let dataset = [];
+    try {
+      let dataset = [];
 
-    dataset =
-      pendingTasks.length > 0
-        ? pendingTasks.splice(0)
-        : await DataController.read(currentPage);
+      dataset =
+        pendingTasks.length > 0
+          ? pendingTasks.splice(0)
+          : await DataController.read(currentPage);
 
-    const generator = generatorRunner(dataset);
+      const generator = generatorRunner(dataset);
 
-    const next = generator.next();
+      const next = generator.next();
 
-    if (!dataset.length) {
-      endTime = performance.now();
-      const total = endTime - startTime;
-      console.log('Total time: ', total, 'ms => ', total / 1000, 's');
-    }
+      if (!dataset.length) {
+        endTime = performance.now();
+        const total = endTime - startTime;
+        console.log('Total time: ', total, 'ms => ', total / 1000, 's');
+      }
 
-    if (!next.done) {
-      next.value.then(() => {
-        if (!pendingTasks.length) {
-          currentPage += 1;
-        }
-        run();
-      });
-    } else {
-      sendEmails();
+      if (!next.done) {
+        next.value.then(() => {
+          if (!pendingTasks.length) {
+            currentPage += 1;
+          }
+          run();
+        });
+      } else {
+        sendEmails();
+      }
+    } catch (err) {
+      sendEmails('SCRIPT ERROR', err.message);
     }
   };
 

@@ -1,6 +1,9 @@
 const nodemailer = require('nodemailer');
 
-const sendEmail = () =>
+const sendEmail = (
+  subject = 'Algoritmo Finalizado',
+  text = 'Tá na hora de olhar o banco...'
+) =>
   nodemailer.createTestAccount(err => {
     if (err) {
       console.log(err);
@@ -19,8 +22,8 @@ const sendEmail = () =>
     const mailOptions = {
       from: '"BOT - Zoneamento" <rabodecalango02@gmail.com>',
       to: ['eduardo@hypercodetech.com.br', 'stenio.wagner1@gmail.com'],
-      subject: 'Algoritmo Finalizado',
-      text: 'Tá na hora de olhar o banco...',
+      subject,
+      text,
     };
 
     transporter.sendMail(mailOptions, error => {
