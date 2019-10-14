@@ -13,10 +13,10 @@
 
 module.exports = {
   dialect: 'postgres',
-  host: '129.213.162.136',
-  username: 'postgres',
-  password: 'admin',
-  database: 'zoneamento',
+  host: '129.213.43.180',
+  username: 'appzoneamento',
+  password: 'qly&Lk8ueRgCxmXwI^aHG^oe',
+  database: 'appzoneamentodb',
   define: {
     timestamps: false,
     underscored: true,
